@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BairroAlerta — Painel</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 20px; }
+    h1 { color: #0b5; }
+    #alerts { margin-top: 16px; }
+    .alert-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 8px; border-radius: 6px; }
+    .meta { color: #666; font-size: 0.9rem; }
+    form { margin-top: 12px; display:flex; gap:8px; align-items:flex-start; }
+    input[type="text"], textarea { padding:8px; border-radius:4px; border:1px solid #ccc; width:100%; }
+    button { padding:8px 12px; border-radius:6px; border:none; background:#28a745; color:white; cursor:pointer; }
+    button.secondary { background:#007bff; }
+    #status { margin-top:10px; font-size:0.9rem; color:#333; }
+  </style>
+</head>
+<body>
+  <h1>BairroAlerta — Painel</h1>
+
+  <div>
+    <strong>Status conexão:</strong> <span id="status">Desconectado</span>
+  </div>
+
+  <section id="newAlert">
+    <h2>Criar alerta</h2>
+    <form id="formAlert">
+      <div style="flex:1;">
+        <input id="titulo" placeholder="Título (ex: Vaga de Segurança)" required />
+        <textarea id="mensagem" placeholder="Mensagem (ex: Observado movimento suspeito...)" rows="3" style="margin-top:8px;" required></textarea>
+      </div>
+      <div style="width:150px;">
+        <button type="submit">Enviar</button>
+        <button type="button" id="reloadBtn" class="secondary" style="display:block; margin-top:8px;">Atualizar</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="alerts">
+    <h2>Alertas</h2>
+    <div id="list"></div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+  <script>
+    const status = document.getElementById('status');
+    const list = document.getElementById('list');
+    const form = document.getElementById('formAlert');
+    const tituloInput = document.getElementById('titulo');
+    const mensagemInput = document.getElementById('mensagem');
+    const reloadBtn = document.getElementById('reloadBtn');
+
+    // Função para renderizar um alerta (ajuste campos conforme seu modelo)
+    function renderAlert(a) {
+      const d = document.createElement('div');
+      d.className = 'alert-card';
+      const title = a.titulo ?? a.tituloAlerta ?? a.title ?? 'Alerta';
+      const msg = a.mensagem ?? a.mensagemAlerta ?? a.message ?? JSON.stringify(a);
+      const created = a.dataCriacao ?? a.createdAt ?? a.created ?? '';
+      d.innerHTML = `<strong>${escapeHtml(title)}</strong>
+                     <div class="meta">${created}</div>
+                     <div style="margin-top:6px;">${escapeHtml(msg)}</div>`;
+      return d;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/[&<>"']/g, function(m) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m];
+      });
+    }
+
+    // carregar lista via API
+    async function loadAlerts() {
+      try {
+        const res = await fetch('/api/Alertas');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        list.innerHTML = '';
+        if (!Array.isArray(data)) {
+          // se API retornar objeto com lista em "items" ou "data", tente extrair
+          const arr = data.items ?? data.data ?? data;
+          if (Array.isArray(arr)) {
+            arr.forEach(a => list.appendChild(renderAlert(a)));
+            return;
+          }
+        }
+        data.forEach(a => list.appendChild(renderAlert(a)));
+      } catch (err) {
+        list.innerHTML = '<div style="color:#b00">Erro ao carregar alertas: ' + err + '</div>';
+      }
+    }
+
+    // conectar SignalR
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl('/alertaHub')
+      .withAutomaticReconnect()
+      .build();
+
+    connection.on('ReceberAlerta', (alerta) => {
+      // novo alerta recebido em tempo real
+      // colocamos no topo da lista
+      const el = renderAlert(alerta);
+      list.insertBefore(el, list.firstChild);
+    });
+
+    connection.start()
+      .then(() => {
+        status.textContent = 'Conectado';
+        status.style.color = 'green';
+      })
+      .catch(err => {
+        status.textContent = 'Erro: ' + err.message;
+        status.style.color = 'red';
+        console.error(err);
+      });
+
+    // enviar via POST (API) e opcionalmente via SignalR
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alerta = {
+        // adapte as chaves abaixo ao seu modelo Alerta
+        titulo: tituloInput.value.trim(),
+        mensagem: mensagemInput.value.trim()
+      };
+      try {
+        // 1) postar na API
+        const res = await fetch('/api/Alertas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(alerta)
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(res.status + ' ' + txt);
+        }
+
+        // 2) opcional: notificar via SignalR (se quiser que todos recebam imediatamente)
+        try {
+          await connection.invoke('NovoAlerta', alerta);
+        } catch (e) {
+          // pode falhar se hub não aceita o formato — não é crítico
+          console.warn('SignalR invoke falhou:', e);
+        }
+
+        // limpar form e atualizar lista
+        tituloInput.value = '';
+        mensagemInput.value = '';
+        await loadAlerts();
+      } catch (err) {
+        alert('Erro ao enviar alerta: ' + err.message);
+        console.error(err);
+      }
+    });
+
+    reloadBtn.addEventListener('click', loadAlerts);
+
+    // Inicializa
+    loadAlerts();
+  </script>
+</body>
+</html>

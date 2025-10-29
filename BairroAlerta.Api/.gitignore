@@ -1,0 +1,31 @@
+# Arquivos de Build
+[Bb]in/
+[Oo]bj/
+
+# Pacotes
+*.nupkg
+*.snupkg
+**/[Rr]elease/
+**/[Dd]ebug/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.useroptions
+*.bak
+
+# Arquivos de Teste
+TestResults/
+
+# .NET Tooling
+.config/dotnet-tools.json
+.config/dotnet-tools.local.json
+
+# Logs
+*.log
+log/
+
+# Segredos (NÃO ENVIE ISSO!)
+appsettings.Development.json
+appsettings.json.user

@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="BairroAlerta.MainPage"
+             Title="BairroAlerta"
+             BackgroundColor="#1e1e1e">
+
+    <Grid RowDefinitions="auto,*,auto" Padding="15" RowSpacing="10">
+        
+        <!-- HEADER -->
+        <StackLayout Grid.Row="0" Spacing="10">
+            <Label Text="🚨 BairroAlerta" 
+                   FontSize="28" 
+                   FontAttributes="Bold" 
+                   TextColor="#fff"
+                   HorizontalTextAlignment="Center"/>
+            <Label Text="Alertas Comunitários em Tempo Real" 
+                   FontSize="14" 
+                   TextColor="#aaa"
+                   HorizontalTextAlignment="Center"/>
+        </StackLayout>
+
+        <!-- LISTA DE ALERTAS -->
+        <CollectionView Grid.Row="1" 
+                        x:Name="AlertasCollectionView"
+                        SelectionMode="Single">
+            <CollectionView.ItemsSource>
+                <x:Array Type="{x:Type x:String}">
+                </x:Array>
+            </CollectionView.ItemsSource>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame BorderColor="#667eea" 
+                           CornerRadius="10" 
+                           Padding="15" 
+                           Margin="0,5"
+                           HasShadow="True">
+                        <StackLayout Spacing="8">
+                            <Label FontAttributes="Bold" 
+                                   FontSize="16" 
+                                   TextColor="#fff"/>
+                            <Label FontSize="12" 
+                                   TextColor="#ddd"/>
+                            <Label FontSize="11" 
+                                   TextColor="#999"/>
+                        </StackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- BOTÃO CRIAR ALERTA -->
+        <Button Grid.Row="2"
+                Text="➕ Novo Alerta"
+                BackgroundColor="#667eea"
+                TextColor="#fff"
+                FontSize="16"
+                FontAttributes="Bold"
+                Padding="15"
+                CornerRadius="10"
+                Clicked="OnNovoAlertaClicked"/>
+
+    </Grid>
+
+</ContentPage>
