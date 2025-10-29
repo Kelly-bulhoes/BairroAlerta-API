@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-
+using BairroAlerta.Api.Services; 
 using BairroAlerta.Api.Hubs;
 using BairroAlerta.Api.Data;
 
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped<IAlertasService, AlertasService>();
 
 // --- logging (útil em dev) ---
 builder.Logging.ClearProviders();
