@@ -95,5 +95,6 @@ Fluxo:
 | Service | IAlertasService.cs | Contrato |
 | Service Impl. | AlertasService.cs | Regras de negócio |
 | SignalR Hub | AlertsHub.cs | Notificações |
+| Core | Program.cs | Configuração da aplicação |
 
 ---
