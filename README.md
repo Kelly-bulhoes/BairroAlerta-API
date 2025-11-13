@@ -49,7 +49,34 @@ Envia alertas em tempo real.
 
 ---
 
-## 🧱 5. Arquitetura do Módulo
+## 🏗️ 5. Program.cs — Configuração da Aplicação
+
+### Serviços configurados:
+- `AddScoped<IAlertasService, AlertasService>()`
+- `AddDbContext<AlertaContext>(UseInMemoryDatabase)`
+- Logging com Console
+- Swagger (somente Development)
+- SignalR
+
+### Middlewares:
+1. HTTPS Redirection  
+2. Routing  
+3. Authorization  
+4. Static Files  
+5. Controllers  
+6. Hubs (SignalR)
+
+### Mapeamento do Hub:
+- `/alertaHub`
+
+### Logs de ciclo de vida:
+- ApplicationStarted  
+- ApplicationStopping  
+- ApplicationStopped  
+
+---
+
+## 🧱 6. Arquitetura do Módulo
 
 Fluxo:
 1. A API recebe novo alerta.
